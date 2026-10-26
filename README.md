@@ -1,4 +1,4 @@
-# TRIAD (NETWORK INTRUSION SYSTEM)
+# TRIAD (NETWORK INTRUSION DETECTION SYSTEM)
 
 **Three-tier autonomous cyber defense:**
 LightGBM classifier + Isolation Forest anomaly detector + PPO reinforcement learning agent,
