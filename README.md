@@ -159,87 +159,100 @@ Every flagged packet gets a SHAP explanation using `TreeExplainer` on the LightG
 their raw values, and their SHAP contributions(positive = pushed toward attack, negative = pushed toward BENIGN). This appears in both the dashboard and the alert email
 
 
-PERFORMANCE RESULTS
+Performance Results
+
 Evaluated on a chronologically held-out test set of 37,500 flows (never seen during training).
 
- Tier 1 — LightGBM Classification
+Tier 1: LightGBM Classification
 
-| Class                | Precision | Recall  |   F1  | Support |
-| BENIGN               |  98.6%    |  96.2%  | 97.4% | 34,729  |
-| DDoS                 | 84.9%     | 94.7%   | 89.6% | 738     |
-| PortScan             | 84.5%     | 95.1%   | 89.5% | 1,406   |
-| DoS GoldenEye        | 60.8%     | 17.2%   | 26.8% | 507     |
-| SSH-Patator          | 0%        | 0%      | 0%    | 101     |
-| Bot                  | 0%        | 0%      | 0%    | 19      |
-| Overall accuracy     |  94.8%    | 37,500                    |
+| Class | Precision | Recall | F1 | Support |
+|:------|----------:|-------:|---:|--------:|
+| ✅ BENIGN | 98.6% | 96.2% | 97.4% | 34,729 |
+| ✅ DDoS | 84.9% | 94.7% | 89.6% | 738 |
+| ✅ PortScan | 84.5% | 95.1% | 89.5% | 1,406 |
+| ⚠️ DoS GoldenEye | 60.8% | 17.2% | 26.8% | 507 |
+| ❌ SSH-Patator | 0% | 0% | 0% | 101 |
+| ❌ Bot | 0% | 0% | 0% | 19 |
+
+Overall accuracy: 94.8% on 37,500 flows
+
+> Known limitation: Tier 1 fails on rare and low-volume attacks (SSH-Patator, Bot, most of GoldenEye).
+> This is the reason Tiers 2 and 3 exist: the IsolationForest catches what the classifier misses.
 
  System-Level Performance (All Three Tiers Combined)
 
-| Metric                             | Value            |
-| System detection rate              | 92.20%           |
-| System false alarm rate            | 7.87%            |
-| Tier 2 catch rate (of T1 misses)   | 53.25%           |
-| Tier 2 false alarm rate on BENIGN  | 4.80%            |
-| PPO: DROP rate on real attacks     | 80.5%            |
-| PPO: ALLOW rate on real BENIGN     | 99.1%            |
-| Average inference latency (Docker) | ~33ms per packet |
+| Metric | Value |
+|:-------|------:|
+| System detection rate | 92.20% |
+| System false alarm rate | 7.87% |
+| Avg inference latency (Docker) | ~33 ms |
+
+Tier 2: Isolation Forest
+
+| Metric | Value |
+|:-------|------:|
+| Catch rate (of Tier 1 misses) | 53.25% |
+| False alarm rate on BENIGN | 4.80% |
+
+Tier 3: PPO Agent
+
+| Metric | Value |
+|:-------|------:|
+| DROP rate on real attacks | 80.5% |
+| ALLOW rate on real BENIGN | 99.1% |
 
 
+Tech Stack
 
- Tech Stack
-
-| Layer            | Technology                   | Why                                             |
-| ML — Tier 1      | LightGBM 4.3                 | Best-in-class for tabular data, fast training   |
-| ML — Tier 2      | scikit-learn IsolationForest | Unsupervised, no attack labels needed           |
-| ML — Tier 3      | Stable Baselines3 PPO        | Battle-tested RL library, gymnasium-compatible  |
-| Explainability   | SHAP TreeExplainer           | Exact SHAP values for tree models, fast         |
-| API              | FastAPI + Uvicorn            | Async, auto-documented, production-grade        |
-| Dashboard        | Streamlit + Plotly           | Rapid ML dashboard development                  |
-| Serialization    | joblib                       | Safe, efficient for sklearn/numpy objects       |
-| Alerts           | Python smtplib (Gmail)       | Zero extra dependencies                         |
-| Containerization | Docker + Docker Compose      | Reproducible, one-command deployment            |
-| Dataset          | CICIDS2017                   | 2.26M real network flows, 15 attack types       |
-
-
+| Layer | Technology | Why |
+|:------|:-----------|:----|
+| Tier 1 ML | LightGBM 4.3 | Best-in-class for tabular data, fast training |
+| Tier 2 ML | scikit-learn IsolationForest | Unsupervised, no attack labels needed |
+| Tier 3 RL | Stable Baselines3 PPO | Battle-tested, Gymnasium-compatible |
+| Explainability | SHAP TreeExplainer | Exact SHAP values for tree models |
+| API | FastAPI + Uvicorn | Async, auto-documented |
+| Dashboard | Streamlit + Plotly | Rapid ML dashboards |
+| Serialization | joblib | Efficient for sklearn/numpy objects |
+| Alerts | Python `smtplib` (Gmail) | Zero extra dependencies |
+| Containers | Docker + Compose | One-command deployment |
+| Dataset | CICIDS2017 | 2.26M real flows, 15 attack types |
 
 
-PROJECT STRUCTURE
+Project Structure
 network-intrusion-system/
-├── images/
-│  ├── DASHBOARD1.img
-│  ├── SHAP.img
-│  ├── PACKETFEED.img
-│  ├── SECURITYALERT.img
-│  ├── SECURITYALERT2.img
-│  ├── SHAP2.img
+├── images/                  # README screenshots
+│   ├── DASHBOARD1.png
+│   ├── SHAP.png
+│   ├── SHAP2.png
+│   ├── PACKETFEED.png
+│   ├── SECURITYALERT.png
+│   └── SECURITYALERT2.png
 ├── app/
-│   ├── main.py                       FastAPI application — inference pipeline
-│   ├── alerts.py                     Email alert system (AlertManager)
-│   ├── shap_explainer.py             SHAP TreeExplainer wrapper
-│   ├── preprocess.py                 Data loading, splitting, scaling
-│   ├── models.py                     train_lgbm() — LightGBM training wrapper
-│   ├── env.py                        FastNetworkDefenseEnv — PPO Gymnasium env
-│   └── train.py                      Original Tier 3 PPO training script
+│   ├── main.py              # FastAPI inference pipeline
+│   ├── alerts.py            # Email alerts (AlertManager)
+│   ├── shap_explainer.py    # SHAP TreeExplainer wrapper
+│   ├── preprocess.py        # Load, split, scale data
+│   ├── models.py            # train_lgbm() wrapper
+│   ├── env.py               # PPO Gymnasium environment
+│   └── train.py             # Tier 3 PPO training
 ├── dashboard/
-│   └── streamlit_app.py              Live threat monitoring dashboard
-├── artifacts/                        Saved model files (not in git)
-│   ├── feature_scaler.pkl            StandardScaler fitted on training data
-│   ├── label_encoder.pkl             LabelEncoder for 15 classes
-│   ├── tier1_lightgbm.pkl            LightGBM multiclass model
+│   └── streamlit_app.py     # Live threat dashboard
+├── artifacts/               # Saved models (not in git)
+│   ├── feature_scaler.pkl
+│   ├── label_encoder.pkl
+│   ├── tier1_lightgbm.pkl
 │   ├── tier2_isolation_forest.pkl
 │   ├── tier3_ppo_agent_scaled.zip
-│   └── system_config.txt             Anomaly threshold, BENIGN index
+│   └── system_config.txt
 ├── data/
-│   └── MachineLearningCVE/           CICIDS2017 CSVs (not in git — too large)
-├── retrain.py                        Single-script full pipeline retrain
-├── evaluate.py                       Full held-out test set evaluation
-├── Dockerfile                        API container
-├── Dockerfile.dashboard              Dashboard container
-├── docker-compose.yml                Orchestration
-├── requirements.txt                  Python dependencies
-└── .env                              Email credentials (not in git)
-
-
+│   └── MachineLearningCVE/  # CICIDS2017 CSVs (not in git)
+├── retrain.py               # Full pipeline retrain
+├── evaluate.py              # Held-out test evaluation
+├── Dockerfile               # API container
+├── Dockerfile.dashboard     # Dashboard container
+├── docker-compose.yml       # Orchestration
+├── requirements.txt
+└── .env                     # Email credentials (not in git)
 
 
 QUICK START
