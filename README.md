@@ -223,9 +223,9 @@ Evaluated on a **chronologically held-out test set of 37,500 flows** (never seen
 
 | Metric | Value |
 |:-------|------:|
-| 🎯 System detection rate | **92.20%** |
-| 🚨 System false alarm rate | **7.87%** |
-| ⚡ Avg inference latency (Docker) | **~33 ms** |
+|  System detection rate | **92.20%** |
+|  System false alarm rate | **7.87%** |
+|  Avg inference latency (Docker) | **~33 ms** |
 
 #### Tier 2: Isolation Forest
 
