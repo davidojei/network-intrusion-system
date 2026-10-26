@@ -1,4 +1,4 @@
-# NETWORK INTRUSION SYATEM
+# TRIAD (NETWORK INTRUSION SYSTEM)
 
 **Three-tier autonomous cyber defense:**
 LightGBM classifier + Isolation Forest anomaly detector + PPO reinforcement learning agent,
