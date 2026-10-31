@@ -311,7 +311,7 @@ network-intrusion-system/
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/JohnBosely/network-intrusion-system.git
+git clone https://github.com/davidojei/network-intrusion-system.git
 cd network-intrusion-system
 ```
 
